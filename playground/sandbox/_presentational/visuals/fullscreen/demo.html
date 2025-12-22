@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Static Template</title>
+  </head>
+  <body>
+    <h1>
+      Fullscreen
+    </h1>
+    <div class="container">
+      <p>
+        <em
+          >Click the button below to enter the element into fullscreen mode.
+        </em>
+      </p>
+      <div class="element" id="element">
+        <p>I change color in fullscreen mode!</p>
+      </div>
+      <br />
+      <button
+        onclick="var el = document.getElementById('element'); el.requestFullscreen();"
+      >
+        Go Full Screen!
+      </button>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

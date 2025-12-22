@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Static Template</title>
+  </head>
+  <body>
+    <h1>
+      Custom Radio Button
+    </h1>
+    <label class="custom-radio-button">
+      <!-- The real radio -->
+      <input type="radio" class="custom-radio-button__input" />
+
+      <!-- The fake circle -->
+      <div class="custom-radio-button__circle">
+        <!-- The inner circle -->
+        <div
+          class="custom-radio-button__radio custom-radio-button__radio--selected"
+        ></div>
+      </div>
+
+      <!-- The text -->
+      Option 1
+    </label>
+
+    <script src="script.js"></script>
+  </body>
+</html>

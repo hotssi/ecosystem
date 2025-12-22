@@ -1,36 +1,34 @@
-# Project Structure
+# Ecosystem: Unified Developer Foundation
 
-```shell
-├── documents # TODO: Document project will be there. DocumentCSS, jsdoc, pydoc, and so on...
-├── index.html # FIN: simple intro page with nes.css
-├── package.json
-├── README.md
-├── snippets # TODO: algorithms and data structure codes written in python and javascript will be there.
-│  ├── navi
-│  │  ├── frequently-used
-│  │  │  ├── built-in
-│  │  │  │  ├── install-to-macOS.cheat
-│  │  │  │  ├── install-to-ubuntu.cheat
-│  │  │  │  ├── install-to-wsl.bat
-│  │  │  │  └── install-to-wsl.sh
-│  │  │  └── from-community
-│  │  │     ├── bat.cheat
-│  │  │     ├── diff-so-fancy.cheat
-│  │  │     └── exa.cheat
-│  │  ├── network
-│  │  │  └── curl.cheat
-│  │  ├── pkg-mgr
-│  │  │  ├── brew.cheat
-│  │  │  └── yarn.cheat
-│  │  └── version-controll
-│  │     └── git.cheat
-│  └── shell # TODO: add githook script with gum.
-└── yarn.lock
+A unified hub for provisioning, configuring, and powering my personal development environment. This repository serves as the single source of truth for my infrastructure, workflows, and experimental projects.
+
+## Project Structure
+
+```text
+.
+├── infra/              # Infrastructure-as-Code & Provisioning
+│   ├── brew/           # Homebrew formulas and tap sources
+│   └── docker/          # Container images and environment configs
+├── workflow/           # Productivity tools and snippets
+│   ├── navi/           # Interactive cheat-sheets for CLI
+│   └── snippet/        # Reusable code fragments and components
+├── playground/         # Experimental area
+│   └── sandbox/        # Scratchpad for quick prototypes
+├── index.html          # Simple intro page (NES.css)
+└── package.json        # Project metadata
 ```
 
-## 주의
+## Branding & Purpose
 
-- :fire: 폴더 Nesting 하지 말 것
-- :fire: 파일 이름에 공백 넣지 말 것
-- :fire: codespace 내에서 sync 돌리지 말 것
-- :fire: 스니펫 이름에 . 넣지 말기. (현재 nap에서 .에 대한 이스케이프가 안 되어 있음.)
+This repository is designated as a **Personal Developer Runtime (PDR)**. The goal is to reach a state where cloning this repository onto a fresh OS provides a complete, ready-to-use development environment.
+
+## Rules & Guidelines
+
+- :fire: **Do not nest folders excessively.** Keep the category-based structure flat.
+- :fire: **Avoid spaces in filenames.** Use hyphens or underscores.
+- :fire: **Avoid dots in snippet names** to prevent escaping issues in tools like `nap`.
+- :fire: **Do not sync within Codespaces** if it conflicts with local file synchronization patterns.
+
+---
+
+_Powered by [NES.css](https://nostalgic-css.github.io/NES.css/)_

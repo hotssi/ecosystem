@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Static Template</title>
+  </head>
+  <body>
+    <h1>
+      Auto Complete
+    </h1>
+    <!-- https://vanillajstoolkit.com/reference/javascript-free/autocomplete/ -->
+
+    <label for="states">Who's the best wizard?</label>
+    <input type="text" id="wizards" name="wizards" list="wizards-list" />
+    <datalist id="wizards-list">
+      <option>Harry Potter</option>
+      <option>Hermione</option>
+      <option>Dumbledore</option>
+      <option>Merlin</option>
+      <option>Gandalf</option>
+    </datalist>
+
+    <script src="script.js"></script>
+  </body>
+</html>
