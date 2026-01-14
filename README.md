@@ -10,10 +10,7 @@ A unified hub for provisioning, configuring, and powering my personal developmen
 │   ├── brew/           # Homebrew formulas and tap sources
 │   └── docker/          # Container images and environment configs
 ├── workflow/           # Productivity tools and snippets
-│   ├── navi/           # Interactive cheat-sheets for CLI
-│   └── snippet/        # Reusable code fragments and components
-├── playground/         # Experimental area
-│   └── sandbox/        # Scratchpad for quick prototypes
+│   └── pet/            # CLI Command Manager (Pet) Configuration
 ├── index.html          # Simple intro page (NES.css)
 └── package.json        # Project metadata
 ```
