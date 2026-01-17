@@ -4,8 +4,8 @@ A unified hub for provisioning, configuring, and powering my personal developmen
 
 ## Project Structure
 
-```text
-.
+```
+├── Formula/            # Symlinks for Homebrew Tap compatibility (Do not edit directly)
 ├── infra/              # Infrastructure-as-Code & Provisioning
 │   ├── brew/           # Homebrew formulas and tap sources
 │   └── docker/          # Container images and environment configs
@@ -14,6 +14,26 @@ A unified hub for provisioning, configuring, and powering my personal developmen
 ├── index.html          # Simple intro page (NES.css)
 └── package.json        # Project metadata
 ```
+
+## 🍺 Homebrew Tap
+
+This repository functions as a Homebrew Tap. You can install tools directly from here.
+
+### Installation
+
+```bash
+brew tap hotssi/ecosystem
+brew install <formula_name>
+```
+
+### Available Formulas
+
+Formulas are located in `infra/brew` and exposed via symlinks in `Formula`.
+
+- `mdexec`
+- `amulet`
+- `but`
+- ... and more.
 
 ## Branding & Purpose
 
