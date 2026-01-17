@@ -1,0 +1,147 @@
+name: Build Woodpecker Agent
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/docker/woodpecker-agent/**"
+      - ".github/workflows/build-woodpecker-agent.yml"
+
+  # 주간 자동 빌드 (일요일 03:30 UTC)
+  schedule:
+    - cron: "30 3 * * 0"
+
+  # 수동 트리거
+  workflow_dispatch:
+    inputs:
+      woodpecker_version:
+        description: "Woodpecker version (e.g., 2.3.0, latest)"
+        required: false
+        default: "latest"
+      push_to_hub:
+        description: "Push to Docker Hub"
+        required: false
+        type: boolean
+        default: true
+
+env:
+  IMAGE_NAME: woodpecker-agent
+  DOCKER_HUB_REPO: mindulle/woodpecker-agent
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get latest Woodpecker version
+        id: woodpecker_version
+        run: |
+          if [ "${{ github.event.inputs.woodpecker_version }}" != "" ]; then
+            VERSION="${{ github.event.inputs.woodpecker_version }}"
+          else
+            # GitHub API에서 최신 릴리스 가져오기
+            VERSION=$(curl -s https://api.github.com/repos/woodpecker-ci/woodpecker/releases/latest | jq -r .tag_name | sed 's/^v//')
+            echo "Latest Woodpecker version: $VERSION"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Generate tags
+        id: tags
+        run: |
+          VERSION="${{ steps.woodpecker_version.outputs.version }}"
+          DATE=$(date +%Y%m%d)
+
+          TAGS="${DOCKER_HUB_REPO}:latest"
+          TAGS="${TAGS},${DOCKER_HUB_REPO}:${VERSION}"
+          TAGS="${TAGS},${DOCKER_HUB_REPO}:${VERSION}-custom"
+          TAGS="${TAGS},${DOCKER_HUB_REPO}:${VERSION}-custom-${DATE}"
+
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+          echo "Generated tags: $TAGS"
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./infra/docker/woodpecker-agent
+          file: ./infra/docker/woodpecker-agent/Dockerfile
+          build-args: |
+            WOODPECKER_VERSION=${{ steps.woodpecker_version.outputs.version }}
+          push: ${{ github.event.inputs.push_to_hub != 'false' }}
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Test image
+        run: |
+          docker run --rm \
+            --entrypoint sh \
+            ${DOCKER_HUB_REPO}:latest \
+            -c "woodpecker-agent --version && curl --version && git --version && make --version"
+
+      - name: Generate build summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          # Woodpecker Agent Build Summary
+
+          ## Build Information
+          - **Woodpecker Version**: ${{ steps.woodpecker_version.outputs.version }}
+          - **Build Date**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          - **Triggered by**: ${{ github.event_name }}
+
+          ## Docker Tags
+          \`\`\`
+          ${{ steps.tags.outputs.tags }}
+          \`\`\`
+
+          ## Pull Command
+          \`\`\`bash
+          docker pull ${DOCKER_HUB_REPO}:latest
+          docker pull ${DOCKER_HUB_REPO}:${{ steps.woodpecker_version.outputs.version }}
+          \`\`\`
+
+          ## Deployment
+
+          ### Same Instance (with Server)
+          \`\`\`bash
+          # Update docker-compose.yml
+          docker-compose pull woodpecker-agent
+          docker-compose up -d woodpecker-agent
+
+          # Check logs
+          docker-compose logs -f woodpecker-agent
+          \`\`\`
+
+          ### Remote Instance
+          \`\`\`bash
+          # SSH to remote machine
+          ssh -i ~/.ssh/oci_key ubuntu@[INSTANCE_IP]
+
+          # Pull and run
+          docker pull ${DOCKER_HUB_REPO}:latest
+          docker run -d \\
+            --name woodpecker-agent \\
+            --restart unless-stopped \\
+            -e WOODPECKER_SERVER=ci.sonagi.space:9000 \\
+            -e WOODPECKER_AGENT_SECRET=\${AGENT_SECRET} \\
+            -e WOODPECKER_MAX_WORKFLOWS=2 \\
+            -v /var/run/docker.sock:/var/run/docker.sock \\
+            ${DOCKER_HUB_REPO}:latest
+
+          # Check logs
+          docker logs -f woodpecker-agent
+          \`\`\`
+          EOF

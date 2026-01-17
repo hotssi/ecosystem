@@ -1,0 +1,130 @@
+name: Build n8n Custom
+
+on:
+  # 수동 트리거
+  workflow_dispatch:
+    inputs:
+      n8n_version:
+        description: "n8n version to build (e.g., 1.62.0 or latest)"
+        required: true
+        default: "latest"
+      push_to_hub:
+        description: "Push to Docker Hub"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+  # n8n-custom 폴더 변경 시
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/docker/n8n-custom/**"
+      - ".github/workflows/build-n8n.yml"
+
+  # 정기 빌드 (주 1회 - n8n 업데이트 체크)
+  schedule:
+    - cron: "0 2 * * 0" # 매주 일요일 오전 2시 (UTC)
+
+env:
+  DOCKER_HUB_REPO: mindulle/n8n-custom
+  IMAGE_NAME: n8n-custom
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        if: github.event.inputs.push_to_hub != 'false'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Set version variables
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            N8N_VERSION="${{ github.event.inputs.n8n_version }}"
+          else
+            # 최신 n8n 버전 가져오기
+            N8N_VERSION=$(curl -s https://api.github.com/repos/n8n-io/n8n/releases/latest | jq -r '.tag_name' | sed 's/n8n@//')
+          fi
+          echo "N8N_VERSION=${N8N_VERSION}" >> $GITHUB_OUTPUT
+
+          # 빌드 날짜 태그
+          BUILD_DATE=$(date +%Y%m%d)
+          echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_OUTPUT
+
+          echo "Building n8n-custom with n8n version: ${N8N_VERSION}"
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./infra/docker/n8n-custom
+          push: ${{ github.event.inputs.push_to_hub != 'false' }}
+          build-args: |
+            N8N_VERSION=${{ steps.version.outputs.N8N_VERSION }}
+          tags: |
+            ${{ env.DOCKER_HUB_REPO }}:latest
+            ${{ env.DOCKER_HUB_REPO }}:${{ steps.version.outputs.N8N_VERSION }}
+            ${{ env.DOCKER_HUB_REPO }}:${{ steps.version.outputs.N8N_VERSION }}-oci
+            ${{ env.DOCKER_HUB_REPO }}:${{ steps.version.outputs.N8N_VERSION }}-oci-${{ steps.version.outputs.BUILD_DATE }}
+          cache-from: type=registry,ref=${{ env.DOCKER_HUB_REPO }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_HUB_REPO }}:buildcache,mode=max
+
+      - name: Test image
+        run: |
+          echo "Testing n8n-custom image..."
+
+          # 이미지 실행 테스트
+          docker run -d --name n8n-test \
+            -p 5678:5678 \
+            ${{ env.DOCKER_HUB_REPO }}:latest
+
+          # 헬스체크 대기
+          echo "Waiting for n8n to start..."
+          sleep 30
+
+          # OCI CLI 설치 확인
+          echo "Checking OCI CLI..."
+          docker exec n8n-test oci --version
+
+          # Python 확인
+          echo "Checking Python..."
+          docker exec n8n-test python3 --version
+
+          # n8n 실행 확인
+          echo "Checking n8n health..."
+          curl -f http://localhost:5678/healthz || exit 1
+
+          echo "All tests passed!"
+
+          # 정리
+          docker stop n8n-test
+          docker rm n8n-test
+
+      - name: Create summary
+        if: success()
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**n8n Version:** ${{ steps.version.outputs.N8N_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Date:** ${{ steps.version.outputs.BUILD_DATE }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Tags Created:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ steps.version.outputs.N8N_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ steps.version.outputs.N8N_VERSION }}-oci\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ steps.version.outputs.N8N_VERSION }}-oci-${{ steps.version.outputs.BUILD_DATE }}\`" >> $GITHUB_STEP_SUMMARY
