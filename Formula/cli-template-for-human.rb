@@ -1,0 +1,1 @@
+../infra/brew/cli-template-for-human.rb
